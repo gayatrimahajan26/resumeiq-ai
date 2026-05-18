@@ -34,44 +34,53 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
 
     const resumeText = pdfData.text.toLowerCase();
 
+    const jobDescription =
+      req.body.jobDescription.toLowerCase();
+
+    const keywords = [
+      "aws",
+      "docker",
+      "kubernetes",
+      "terraform",
+      "jenkins",
+      "linux",
+      "ci/cd",
+    ];
+
     const detectedSkills = [];
     const missingSkills = [];
 
-    let feedback = `
-Suggestions:
+    keywords.forEach((skill) => {
+
+      if (
+        resumeText.includes(skill) &&
+        jobDescription.includes(skill)
+      ) {
+        detectedSkills.push(skill);
+      }
+
+      if (
+        jobDescription.includes(skill) &&
+        !resumeText.includes(skill)
+      ) {
+        missingSkills.push(skill);
+      }
+
+    });
+
+    const atsScore = Math.round(
+      (detectedSkills.length / keywords.length) * 100
+    );
+
+    const feedback = `
+Matched Skills:
+${detectedSkills.join(", ")}
+
+Missing Skills:
+${missingSkills.join(", ")}
+
+✅ Resume analyzed against job description.
 `;
-
-    if (resumeText.includes("aws")) {
-      detectedSkills.push("AWS");
-    } else {
-      missingSkills.push("AWS");
-      feedback += "\n- Add AWS skills";
-    }
-
-    if (resumeText.includes("docker")) {
-      detectedSkills.push("Docker");
-    } else {
-      missingSkills.push("Docker");
-      feedback += "\n- Add Docker experience";
-    }
-
-    if (resumeText.includes("kubernetes")) {
-      detectedSkills.push("Kubernetes");
-    } else {
-      missingSkills.push("Kubernetes");
-      feedback += "\n- Add Kubernetes projects";
-    }
-
-    if (resumeText.includes("terraform")) {
-      detectedSkills.push("Terraform");
-    } else {
-      missingSkills.push("Terraform");
-      feedback += "\n- Add Terraform knowledge";
-    }
-
-    const atsScore = detectedSkills.length * 25;
-
-    feedback += "\n\n✅ Resume analyzed based on actual PDF content.";
 
     res.json({
       message: "Resume analyzed successfully 🚀",

@@ -11,15 +11,20 @@ export default function Home() {
 
   const [file, setFile] = useState<File | null>(null);
 
+  const [jobDescription, setJobDescription] =
+    useState("");
+
   const [message, setMessage] = useState("");
 
   const [feedback, setFeedback] = useState("");
 
   const [atsScore, setAtsScore] = useState(0);
 
-  const [detectedSkills, setDetectedSkills] = useState<string[]>([]);
+  const [detectedSkills, setDetectedSkills] =
+    useState<string[]>([]);
 
-  const [missingSkills, setMissingSkills] = useState<string[]>([]);
+  const [missingSkills, setMissingSkills] =
+    useState<string[]>([]);
 
   const uploadResume = async () => {
 
@@ -31,10 +36,18 @@ export default function Home() {
 
       formData.append("resume", file);
 
-      const res = await fetch("http://localhost:5000/upload", {
-        method: "POST",
-        body: formData,
-      });
+      formData.append(
+        "jobDescription",
+        jobDescription
+      );
+
+      const res = await fetch(
+        "http://localhost:5000/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await res.json();
 
@@ -92,6 +105,15 @@ export default function Home() {
               className="w-full border border-gray-700 rounded-lg p-3 bg-black text-white"
             />
 
+            <textarea
+              placeholder="Paste Job Description Here..."
+              value={jobDescription}
+              onChange={(e) =>
+                setJobDescription(e.target.value)
+              }
+              className="w-full mt-4 border border-gray-700 rounded-lg p-3 bg-black text-white h-40"
+            />
+
             <button
               onClick={uploadResume}
               className="w-full mt-6 bg-white text-black font-semibold py-3 rounded-xl hover:bg-gray-300 transition"
@@ -122,7 +144,7 @@ export default function Home() {
                 </p>
               ) : (
                 <p className="text-gray-500">
-                  Upload your resume to get AI-powered ATS analysis.
+                  Upload your resume and paste a job description.
                 </p>
               )}
 
@@ -149,7 +171,7 @@ export default function Home() {
           <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
 
             <h2 className="text-2xl font-bold mb-4">
-              Detected Skills
+              Matched Skills
             </h2>
 
             <div className="flex flex-wrap gap-2">
