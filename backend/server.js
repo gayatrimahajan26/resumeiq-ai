@@ -1,10 +1,20 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
+const mongoose = require("mongoose");
+
+const Resume = require("./models/Resume");
 
 const app = express();
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected ✅"))
+  .catch((err) => console.log(err));
 
 app.use(cors());
 app.use(express.json());
@@ -47,7 +57,7 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       "ci/cd",
     ];
 
-    const detectedSkills = [];
+    const matchedSkills = [];
     const missingSkills = [];
 
     keywords.forEach((skill) => {
@@ -56,7 +66,7 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
         resumeText.includes(skill) &&
         jobDescription.includes(skill)
       ) {
-        detectedSkills.push(skill);
+        matchedSkills.push(skill);
       }
 
       if (
@@ -69,12 +79,12 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
     });
 
     const atsScore = Math.round(
-      (detectedSkills.length / keywords.length) * 100
+      (matchedSkills.length / keywords.length) * 100
     );
 
     const feedback = `
 Matched Skills:
-${detectedSkills.join(", ")}
+${matchedSkills.join(", ")}
 
 Missing Skills:
 ${missingSkills.join(", ")}
@@ -82,12 +92,21 @@ ${missingSkills.join(", ")}
 ✅ Resume analyzed against job description.
 `;
 
+    // SAVE TO DATABASE
+    await Resume.create({
+      atsScore,
+      matchedSkills,
+      missingSkills,
+      feedback,
+    });
+
+    // SEND RESPONSE
     res.json({
       message: "Resume analyzed successfully 🚀",
-      feedback,
       atsScore,
-      detectedSkills,
+      matchedSkills,
       missingSkills,
+      feedback,
     });
 
   } catch (error) {
@@ -101,8 +120,27 @@ ${missingSkills.join(", ")}
   }
 });
 
+// HISTORY API
+app.get("/history", async (req, res) => {
+  try {
+
+    const resumes = await Resume.find().sort({
+      createdAt: -1,
+    });
+
+    res.json(resumes);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: "Failed to fetch history",
+    });
+
+  }
+});
+
 const PORT = 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port 5000`);
+  console.log(`Server running on port ${PORT}`);
 });

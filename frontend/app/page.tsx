@@ -1,218 +1,339 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import {
   Upload,
   FileText,
-  Sparkles,
+  AlertCircle,
 } from "lucide-react";
+
+import {
+  SignInButton,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
 
 export default function Home() {
 
+  const { isSignedIn } = useUser();
+
   const [file, setFile] = useState<File | null>(null);
 
-  const [jobDescription, setJobDescription] =
-    useState("");
-
-  const [message, setMessage] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
 
   const [feedback, setFeedback] = useState("");
 
   const [atsScore, setAtsScore] = useState(0);
 
-  const [detectedSkills, setDetectedSkills] =
-    useState<string[]>([]);
+  const [matchedSkills, setMatchedSkills] = useState<string[]>([]);
 
-  const [missingSkills, setMissingSkills] =
-    useState<string[]>([]);
+  const [missingSkills, setMissingSkills] = useState<string[]>([]);
 
+  const [history, setHistory] = useState<any[]>([]);
+
+  // FETCH HISTORY
+  useEffect(() => {
+
+    fetch("http://localhost:5000/history")
+      .then((res) => res.json())
+      .then((data) => setHistory(data));
+
+  }, []);
+
+  // ANALYZE RESUME
   const uploadResume = async () => {
 
-    try {
-
-      if (!file) return;
-
-      const formData = new FormData();
-
-      formData.append("resume", file);
-
-      formData.append(
-        "jobDescription",
-        jobDescription
-      );
-
-      const res = await fetch(
-        "http://localhost:5000/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await res.json();
-
-      setMessage(data.message);
-
-      setFeedback(data.feedback);
-
-      setAtsScore(data.atsScore);
-
-      setDetectedSkills(data.detectedSkills);
-
-      setMissingSkills(data.missingSkills);
-
-    } catch (error) {
-
-      console.log(error);
-
-      setMessage("Backend connection failed ❌");
+    if (!file || !jobDescription) {
+      alert("Please upload resume and add job description");
+      return;
     }
+
+    const formData = new FormData();
+
+    formData.append("resume", file);
+
+    formData.append("jobDescription", jobDescription);
+
+    const res = await fetch("http://localhost:5000/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    setFeedback(data.feedback);
+
+    setAtsScore(data.atsScore);
+
+    setMatchedSkills(data.matchedSkills);
+
+    setMissingSkills(data.missingSkills);
+
+    // REFRESH HISTORY
+    fetch("http://localhost:5000/history")
+      .then((res) => res.json())
+      .then((data) => setHistory(data));
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-950 text-white flex items-center justify-center p-6">
 
-      <div className="w-full max-w-6xl bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl p-10">
+    <main className="min-h-screen bg-black text-white px-6 py-10">
 
-        <div className="text-center mb-10">
+      {/* TOP BAR */}
+      <div className="flex justify-between items-center mb-10">
 
-          <h1 className="text-6xl font-extrabold mb-4 flex items-center justify-center gap-3">
-            ResumeIQ AI
-            <Sparkles className="text-yellow-400 w-12 h-12" />
+        <div>
+          <h1 className="text-6xl font-bold">
+            ResumeIQ AI 🚀
           </h1>
 
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-400 mt-2 text-xl">
             AI-Powered Resume Analyzer for ATS Optimization
           </p>
+        </div>
+
+        <div>
+
+          {!isSignedIn ? (
+
+            <SignInButton mode="modal">
+
+              <button className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-gray-200">
+                Sign In
+              </button>
+
+            </SignInButton>
+
+          ) : (
+
+            <UserButton />
+
+          )}
 
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+      </div>
 
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
+      {/* MAIN GRID */}
+      <div className="grid lg:grid-cols-2 gap-8">
 
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Upload />
+        {/* LEFT PANEL */}
+        <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
+
+          <div className="flex items-center gap-3 mb-6">
+            <Upload size={30} />
+            <h2 className="text-4xl font-bold">
               Upload Resume
             </h2>
+          </div>
 
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) =>
-                setFile(e.target.files?.[0] || null)
-              }
-              className="w-full border border-gray-700 rounded-lg p-3 bg-black text-white"
-            />
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={(e) =>
+              setFile(e.target.files?.[0] || null)
+            }
+            className="w-full bg-black border border-gray-700 p-4 rounded-xl mb-6"
+          />
 
-            <textarea
-              placeholder="Paste Job Description Here..."
-              value={jobDescription}
-              onChange={(e) =>
-                setJobDescription(e.target.value)
-              }
-              className="w-full mt-4 border border-gray-700 rounded-lg p-3 bg-black text-white h-40"
-            />
+          <textarea
+            placeholder="Paste Job Description Here..."
+            value={jobDescription}
+            onChange={(e) =>
+              setJobDescription(e.target.value)
+            }
+            className="w-full h-52 bg-black border border-gray-700 p-4 rounded-xl mb-6"
+          />
 
-            <button
-              onClick={uploadResume}
-              className="w-full mt-6 bg-white text-black font-semibold py-3 rounded-xl hover:bg-gray-300 transition"
-            >
-              Analyze Resume
-            </button>
+          <button
+            onClick={uploadResume}
+            className="w-full bg-white text-black py-4 rounded-xl text-2xl font-bold hover:bg-gray-200"
+          >
+            Analyze Resume
+          </button>
 
-            {message && (
-              <p className="mt-4 text-green-400">
-                {message}
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
+
+          <div className="flex items-center gap-3 mb-6">
+            <FileText size={30} />
+            <h2 className="text-4xl font-bold">
+              AI Feedback
+            </h2>
+          </div>
+
+          <div className="bg-black border border-gray-800 rounded-2xl p-6 min-h-[420px]">
+
+            {feedback ? (
+
+              <pre className="whitespace-pre-wrap text-lg text-gray-200">
+                {feedback}
+              </pre>
+
+            ) : (
+
+              <p className="text-gray-500 text-lg">
+                Upload your resume and paste a job description.
               </p>
+
             )}
 
           </div>
 
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
+        </div>
 
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <FileText />
-              AI Feedback
-            </h2>
+      </div>
 
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl p-5 min-h-[250px]">
+      {/* ATS CARDS */}
+      <div className="grid md:grid-cols-3 gap-6 mt-10">
 
-              {feedback ? (
-                <p className="text-gray-200 whitespace-pre-line leading-8">
-                  {feedback}
-                </p>
-              ) : (
-                <p className="text-gray-500">
-                  Upload your resume and paste a job description.
-                </p>
-              )}
+        {/* SCORE */}
+        <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8 text-center">
 
-            </div>
+          <h2 className="text-4xl font-bold mb-6">
+            ATS Score
+          </h2>
+
+          <p className="text-7xl font-bold text-green-400">
+            {atsScore}%
+          </p>
+
+        </div>
+
+        {/* MATCHED */}
+        <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
+
+          <h2 className="text-4xl font-bold mb-6">
+            Matched Skills
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+
+            {matchedSkills.map((skill, index) => (
+
+              <span
+                key={index}
+                className="bg-green-500/20 text-green-400 px-4 py-2 rounded-xl"
+              >
+                {skill}
+              </span>
+
+            ))}
 
           </div>
 
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mt-10">
+        {/* MISSING */}
+        <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
 
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6 text-center">
+          <div className="flex items-center gap-3 mb-6">
+            <AlertCircle className="text-red-400" />
 
-            <h2 className="text-2xl font-bold mb-4">
-              ATS Score
-            </h2>
-
-            <div className="text-6xl font-extrabold text-green-400">
-              {atsScore}%
-            </div>
-
-          </div>
-
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
-
-            <h2 className="text-2xl font-bold mb-4">
-              Matched Skills
-            </h2>
-
-            <div className="flex flex-wrap gap-2">
-
-              {detectedSkills.map((skill, index) => (
-
-                <span
-                  key={index}
-                  className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full"
-                >
-                  {skill}
-                </span>
-
-              ))}
-
-            </div>
-
-          </div>
-
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
-
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-4xl font-bold">
               Missing Skills
             </h2>
+          </div>
 
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
 
-              {missingSkills.map((skill, index) => (
+            {missingSkills.map((skill, index) => (
 
-                <span
-                  key={index}
-                  className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full"
-                >
-                  {skill}
-                </span>
+              <span
+                key={index}
+                className="bg-red-500/20 text-red-400 px-4 py-2 rounded-xl"
+              >
+                {skill}
+              </span>
 
-              ))}
+            ))}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* HISTORY SECTION */}
+      <div className="mt-14">
+
+        <h2 className="text-5xl font-bold mb-8">
+          Resume History
+        </h2>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+
+          {history.map((item: any, index) => (
+
+            <div
+              key={index}
+              className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8"
+            >
+
+              <h3 className="text-3xl font-bold text-green-400 mb-4">
+                ATS Score: {item.atsScore}%
+              </h3>
+
+              <div className="mb-4">
+
+                <p className="text-xl font-semibold mb-2">
+                  Matched Skills
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+
+                  {item.matchedSkills.map(
+                    (skill: string, i: number) => (
+
+                      <span
+                        key={i}
+                        className="bg-green-500/20 text-green-400 px-3 py-1 rounded-xl"
+                      >
+                        {skill}
+                      </span>
+
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+              <div className="mb-4">
+
+                <p className="text-xl font-semibold mb-2">
+                  Missing Skills
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+
+                  {item.missingSkills.map(
+                    (skill: string, i: number) => (
+
+                      <span
+                        key={i}
+                        className="bg-red-500/20 text-red-400 px-3 py-1 rounded-xl"
+                      >
+                        {skill}
+                      </span>
+
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+              <p className="text-gray-500 mt-6">
+                {new Date(item.createdAt).toLocaleString()}
+              </p>
 
             </div>
 
-          </div>
+          ))}
 
         </div>
 
