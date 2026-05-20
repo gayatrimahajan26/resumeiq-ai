@@ -6,6 +6,7 @@ import {
   Upload,
   FileText,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -32,6 +33,8 @@ export default function Home() {
 
   const [history, setHistory] = useState<any[]>([]);
 
+  const [loading, setLoading] = useState(false);
+
   // FETCH HISTORY
   useEffect(() => {
 
@@ -49,31 +52,48 @@ export default function Home() {
       return;
     }
 
+    setLoading(true);
+
     const formData = new FormData();
 
     formData.append("resume", file);
 
     formData.append("jobDescription", jobDescription);
 
-    const res = await fetch("http://localhost:5000/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
 
-    const data = await res.json();
+      const res = await fetch("http://localhost:5000/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    setFeedback(data.feedback);
+      const data = await res.json();
 
-    setAtsScore(data.atsScore);
+      setFeedback(data.feedback);
 
-    setMatchedSkills(data.matchedSkills);
+      setAtsScore(data.atsScore);
 
-    setMissingSkills(data.missingSkills);
+      setMatchedSkills(data.matchedSkills);
 
-    // REFRESH HISTORY
-    fetch("http://localhost:5000/history")
-      .then((res) => res.json())
-      .then((data) => setHistory(data));
+      setMissingSkills(data.missingSkills);
+
+      // REFRESH HISTORY
+      fetch("http://localhost:5000/history")
+        .then((res) => res.json())
+        .then((data) => setHistory(data));
+
+    } catch (error) {
+
+      console.log(error);
+
+      alert("Something went wrong");
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   };
 
   return (
@@ -148,9 +168,19 @@ export default function Home() {
 
           <button
             onClick={uploadResume}
-            className="w-full bg-white text-black py-4 rounded-xl text-2xl font-bold hover:bg-gray-200"
+            disabled={loading}
+            className="w-full bg-white text-black py-4 rounded-xl text-2xl font-bold hover:bg-gray-200 flex justify-center items-center gap-3"
           >
-            Analyze Resume
+
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              "Analyze Resume"
+            )}
+
           </button>
 
         </div>
@@ -197,7 +227,7 @@ export default function Home() {
             ATS Score
           </h2>
 
-          <p className="text-7xl font-bold text-green-400">
+          <p className="text-7xl font-bold text-emerald-400">
             {atsScore}%
           </p>
 
@@ -216,7 +246,7 @@ export default function Home() {
 
               <span
                 key={index}
-                className="bg-green-500/20 text-green-400 px-4 py-2 rounded-xl"
+                className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl"
               >
                 {skill}
               </span>
@@ -257,87 +287,102 @@ export default function Home() {
 
       </div>
 
-      {/* HISTORY SECTION */}
+      {/* HISTORY */}
       <div className="mt-14">
 
         <h2 className="text-5xl font-bold mb-8">
           Resume History
         </h2>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        {history.length === 0 ? (
 
-          {history.map((item: any, index) => (
+          <p className="text-gray-500 text-lg">
+            No resume analysis history found.
+          </p>
 
-            <div
-              key={index}
-              className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8"
-            >
+        ) : (
 
-              <h3 className="text-3xl font-bold text-green-400 mb-4">
-                ATS Score: {item.atsScore}%
-              </h3>
+          <div className="grid lg:grid-cols-2 gap-6">
 
-              <div className="mb-4">
+            {history.map((item: any, index) => (
 
-                <p className="text-xl font-semibold mb-2">
-                  Matched Skills
-                </p>
+              <div
+                key={index}
+                className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8"
+              >
 
-                <div className="flex flex-wrap gap-2">
+                <h3 className="text-3xl font-bold text-emerald-400 mb-4">
+                  ATS Score: {item.atsScore}%
+                </h3>
 
-                  {item.matchedSkills.map(
-                    (skill: string, i: number) => (
+                <div className="mb-4">
 
-                      <span
-                        key={i}
-                        className="bg-green-500/20 text-green-400 px-3 py-1 rounded-xl"
-                      >
-                        {skill}
-                      </span>
+                  <p className="text-xl font-semibold mb-2">
+                    Matched Skills
+                  </p>
 
-                    )
-                  )}
+                  <div className="flex flex-wrap gap-2">
 
-                </div>
+                    {item.matchedSkills.map(
+                      (skill: string, i: number) => (
 
-              </div>
+                        <span
+                          key={i}
+                          className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-xl"
+                        >
+                          {skill}
+                        </span>
 
-              <div className="mb-4">
+                      )
+                    )}
 
-                <p className="text-xl font-semibold mb-2">
-                  Missing Skills
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-
-                  {item.missingSkills.map(
-                    (skill: string, i: number) => (
-
-                      <span
-                        key={i}
-                        className="bg-red-500/20 text-red-400 px-3 py-1 rounded-xl"
-                      >
-                        {skill}
-                      </span>
-
-                    )
-                  )}
+                  </div>
 
                 </div>
 
+                <div className="mb-4">
+
+                  <p className="text-xl font-semibold mb-2">
+                    Missing Skills
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+
+                    {item.missingSkills.map(
+                      (skill: string, i: number) => (
+
+                        <span
+                          key={i}
+                          className="bg-red-500/20 text-red-400 px-3 py-1 rounded-xl"
+                        >
+                          {skill}
+                        </span>
+
+                      )
+                    )}
+
+                  </div>
+
+                </div>
+
+                <p className="text-gray-500 mt-6">
+                  {new Date(item.createdAt).toLocaleString()}
+                </p>
+
               </div>
 
-              <p className="text-gray-500 mt-6">
-                {new Date(item.createdAt).toLocaleString()}
-              </p>
+            ))}
 
-            </div>
+          </div>
 
-          ))}
-
-        </div>
+        )}
 
       </div>
+
+      {/* FOOTER */}
+      <footer className="text-center text-gray-500 mt-20 pb-10">
+        Built with ❤️ using Next.js, Node.js, MongoDB & Clerk
+      </footer>
 
     </main>
   );
