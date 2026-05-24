@@ -1,11 +1,11 @@
 require("dotenv").config();
 
+const mongoose = require("mongoose");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
-const mongoose = require("mongoose");
 
 const Resume = require("./models/Resume");
 
@@ -17,26 +17,46 @@ mongoose
   .catch((err) => console.log(err));
 
 app.use(cors());
+
 app.use(express.json());
 
 const storage = multer.diskStorage({
+
   destination: function (req, file, cb) {
+
     cb(null, "uploads/");
+
   },
 
   filename: function (req, file, cb) {
+
     cb(null, Date.now() + "-" + file.originalname);
+
   },
+
 });
 
-const upload = multer({ storage });
+const upload = multer({
+
+  storage,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+
+});
 
 app.get("/", (req, res) => {
+
   res.send("ResumeIQ AI Backend Running 🚀");
+
 });
 
 app.post("/upload", upload.single("resume"), async (req, res) => {
+
   try {
+
+    console.log("UPLOAD API HIT");
 
     const dataBuffer = fs.readFileSync(req.file.path);
 
@@ -57,7 +77,8 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       "ci/cd",
     ];
 
-    const matchedSkills = [];
+    const detectedSkills = [];
+
     const missingSkills = [];
 
     keywords.forEach((skill) => {
@@ -66,25 +87,29 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
         resumeText.includes(skill) &&
         jobDescription.includes(skill)
       ) {
-        matchedSkills.push(skill);
+
+        detectedSkills.push(skill);
+
       }
 
       if (
         jobDescription.includes(skill) &&
         !resumeText.includes(skill)
       ) {
+
         missingSkills.push(skill);
+
       }
 
     });
 
     const atsScore = Math.round(
-      (matchedSkills.length / keywords.length) * 100
+      (detectedSkills.length / keywords.length) * 100
     );
 
     const feedback = `
 Matched Skills:
-${matchedSkills.join(", ")}
+${detectedSkills.join(", ")}
 
 Missing Skills:
 ${missingSkills.join(", ")}
@@ -92,55 +117,56 @@ ${missingSkills.join(", ")}
 ✅ Resume analyzed against job description.
 `;
 
-    // SAVE TO DATABASE
     await Resume.create({
+
       atsScore,
-      matchedSkills,
+
+      matchedSkills: detectedSkills,
+
       missingSkills,
+
       feedback,
+
     });
 
-    // SEND RESPONSE
     res.json({
-      message: "Resume analyzed successfully 🚀",
+
       atsScore,
-      matchedSkills,
+
+      matchedSkills: detectedSkills,
+
       missingSkills,
+
       feedback,
+
     });
 
   } catch (error) {
 
-    console.log(error);
+    console.error("UPLOAD ERROR:", error);
 
     res.status(500).json({
-      error: "Something went wrong",
+      error: error.message,
     });
 
   }
+
 });
 
-// HISTORY API
 app.get("/history", async (req, res) => {
-  try {
 
-    const resumes = await Resume.find().sort({
-      createdAt: -1,
-    });
+  const history = await Resume.find().sort({
+    createdAt: -1,
+  });
 
-    res.json(resumes);
+  res.json(history);
 
-  } catch (error) {
-
-    res.status(500).json({
-      error: "Failed to fetch history",
-    });
-
-  }
 });
 
 const PORT = 5000;
 
 app.listen(PORT, () => {
+
   console.log(`Server running on port ${PORT}`);
+
 });

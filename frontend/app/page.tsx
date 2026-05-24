@@ -40,7 +40,8 @@ export default function Home() {
 
     fetch("http://localhost:5000/history")
       .then((res) => res.json())
-      .then((data) => setHistory(data));
+      .then((data) => setHistory(data))
+      .catch((err) => console.log(err));
 
   }, []);
 
@@ -48,8 +49,11 @@ export default function Home() {
   const uploadResume = async () => {
 
     if (!file || !jobDescription) {
+
       alert("Please upload resume and add job description");
+
       return;
+
     }
 
     setLoading(true);
@@ -63,8 +67,11 @@ export default function Home() {
     try {
 
       const res = await fetch("http://localhost:5000/upload", {
+
         method: "POST",
+
         body: formData,
+
       });
 
       const data = await res.json();
@@ -104,6 +111,7 @@ export default function Home() {
       <div className="flex justify-between items-center mb-10">
 
         <div>
+
           <h1 className="text-6xl font-bold">
             ResumeIQ AI 🚀
           </h1>
@@ -111,6 +119,7 @@ export default function Home() {
           <p className="text-gray-400 mt-2 text-xl">
             AI-Powered Resume Analyzer for ATS Optimization
           </p>
+
         </div>
 
         <div>
@@ -142,10 +151,13 @@ export default function Home() {
         <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
 
           <div className="flex items-center gap-3 mb-6">
+
             <Upload size={30} />
+
             <h2 className="text-4xl font-bold">
               Upload Resume
             </h2>
+
           </div>
 
           <input
@@ -173,12 +185,16 @@ export default function Home() {
           >
 
             {loading ? (
+
               <>
                 <Loader2 className="animate-spin" />
                 Analyzing...
               </>
+
             ) : (
+
               "Analyze Resume"
+
             )}
 
           </button>
@@ -189,10 +205,13 @@ export default function Home() {
         <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
 
           <div className="flex items-center gap-3 mb-6">
+
             <FileText size={30} />
+
             <h2 className="text-4xl font-bold">
               AI Feedback
             </h2>
+
           </div>
 
           <div className="bg-black border border-gray-800 rounded-2xl p-6 min-h-[420px]">
@@ -261,11 +280,13 @@ export default function Home() {
         <div className="bg-[#0f172a] border border-gray-800 rounded-3xl p-8">
 
           <div className="flex items-center gap-3 mb-6">
+
             <AlertCircle className="text-red-400" />
 
             <h2 className="text-4xl font-bold">
               Missing Skills
             </h2>
+
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -386,4 +407,5 @@ export default function Home() {
 
     </main>
   );
+
 }
