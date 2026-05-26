@@ -102,7 +102,30 @@ resumeiq-ai/
 
 ## 📸 Screenshots
 
-(Add screenshots here)
+## 📸 Screenshots
+
+### 🏠 Home Page
+![Home](./screenshots/Home.png)
+
+---
+
+### 📄 Resume Upload
+![Upload](./screenshots/Upload.png)
+
+---
+
+### 📊 ATS Analysis
+![ATS](./screenshots/ATS-Result.png)
+
+---
+
+### 🐳 Docker Deployment
+![Docker](./screenshots/Docker.png)
+
+---
+
+### 🔄 Jenkins CI/CD
+![Jenkins](./screenshots/jenkins.png)
 
 ---
 
