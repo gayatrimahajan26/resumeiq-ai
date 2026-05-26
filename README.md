@@ -125,7 +125,7 @@ resumeiq-ai/
 ---
 
 ### 🔄 Jenkins CI/CD
-![Jenkins](./screenshots/jenkins.png)
+![Jenkins](./screenshots/Jenkins.png)
 
 ---
 
