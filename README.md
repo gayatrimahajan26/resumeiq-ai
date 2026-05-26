@@ -102,8 +102,6 @@ resumeiq-ai/
 
 ## 📸 Screenshots
 
-## 📸 Screenshots
-
 ### 🏠 Home Page
 ![Home](./screenshots/Home.png)
 
